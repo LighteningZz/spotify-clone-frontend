@@ -18,9 +18,14 @@ export const useTracksStore = defineStore('tracks', {
       return res.data;
     },
     setCurrentTrack(track: TracksResponseModel) {
-      if (this.currentTrack) {
-        return this.currentTrack as TracksResponseModel;
-      }
+      this.currentTrack = track as any;
+      return track;
+    },
+    prev() {
+
+    },
+    next() {
+
     }
   },
   getters: {

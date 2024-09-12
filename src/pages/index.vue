@@ -1,7 +1,7 @@
 <template>
-  <HelloWorld />
+  <TrackList />
 </template>
 
 <script lang="ts" setup>
-  //
+//
 </script>

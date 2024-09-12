@@ -8,11 +8,11 @@
               <v-avatar class="ma-3" rounded="0" size="125">
                 <v-img src="https://cdn.vuetifyjs.com/images/cards/halcyon.png"></v-img>
               </v-avatar>
-              <div v-if="track">
+              <div>
                 <v-card-title class="text-h5">
-                  {{ track.title }}
+                  {{ track?.title }}
                 </v-card-title>
-                <v-card-subtitle>{{ track.artist.name }}</v-card-subtitle>
+                <v-card-subtitle>{{ track?.artist?.name }}</v-card-subtitle>
                 <v-card-actions>
                   <v-btn class="ms-2" icon="fas fa-play" variant="text"></v-btn>
                 </v-card-actions>
@@ -23,12 +23,14 @@
         <v-col col="3">
           <v-row>
             <v-col class="text-center">
-              <v-btn class="bg-white text-grey ms-2" icon="fas fa-shuffle"></v-btn>
-              <v-btn class="bg-white text-black ms-2" icon="fas fa-backward-step"></v-btn>
-              <v-btn v-if="play" @click="playHandler" class="bg-white text-black ms-2" icon="fas fa-pause"></v-btn>
-              <v-btn v-else @click="playHandler" class="bg-white text-black ms-2" icon="fas fa-play"></v-btn>
-              <v-btn class="bg-white text-black ms-2" icon="fas fa-forward-step"></v-btn>
-              <v-btn class="bg-white text-grey ms-2" icon="fas fa-repeat"></v-btn>
+              <v-btn :disabled="!playerStatus" class="bg-white text-grey ms-2" icon="fas fa-shuffle"></v-btn>
+              <v-btn :disabled="!playerStatus" class="bg-white text-black ms-2" icon="fas fa-backward-step"></v-btn>
+              <v-btn :disabled="!playerStatus" v-if="play" @click="playHandler" class="bg-white text-black ms-2"
+                icon="fas fa-pause"></v-btn>
+              <v-btn :disabled="!playerStatus" v-else @click="playHandler" class="bg-white text-black ms-2"
+                icon="fas fa-play"></v-btn>
+              <v-btn :disabled="!playerStatus" class="bg-white text-black ms-2" icon="fas fa-forward-step"></v-btn>
+              <v-btn :disabled="!playerStatus" class="bg-white text-grey ms-2" icon="fas fa-repeat"></v-btn>
             </v-col>
           </v-row>
           <v-row>
@@ -66,6 +68,10 @@ const _volume = ref(0)
 const muted = ref(false)
 
 const seeker = ref(false);
+
+const playerStatus = computed(() => {
+  return currentTrack != null;
+})
 
 const seekHandler = () => {
   const seekTo = (duration.value * track.value.duration) / 100;
@@ -111,11 +117,12 @@ const volumeHandler = () => {
   }
 }
 
+import { pl } from 'vuetify/locale';
 import { TracksResponseModel, useTracksStore } from '../stores/tracks';
 const tracksStore = await useTracksStore();
 
-onMounted(async () => {
-})
+
+
 const playHandler = () => {
   play.value = !play.value
   if (play.value) {
@@ -128,30 +135,34 @@ const playHandler = () => {
 }
 
 const prevHandler = () => {
+  tracksStore.prev();
 
 }
 
 const nextHandler = () => {
-
+  tracksStore.next();
 }
-
-onMounted(async () => {
-  const data = await tracksStore.get()
-  tracksStore.setCurrentTrack(data[0])
-  track.value = data[0];
-  player.value = new Audio(track.value.url);
-  player.value.addEventListener('timeupdate', function (e) {
-    e.preventDefault();
-    if (!seeker.value) {
-      trackPlayTime.value = this.currentTime;
-      duration.value = (trackPlayTime.value / track.value.duration) * 100
-      if (duration.value > 100) {
-        player.value.src = 'https://ncsmusic.s3.eu-west-1.amazonaws.com/tracks/000/001/689/underrated-feat-sunny-lukas-1717498853-r0PbfV6FZf.mp3'
-        player.value.play();
+const currentTrack = computed(() => tracksStore.currentTrack);
+watch(currentTrack, async (newTrack, oldTrack) => {
+  if (newTrack) {
+    track.value = newTrack
+    player.value.src = track.value.url;
+    player.value.play();
+    player.value.addEventListener('timeupdate', function (e) {
+      e.preventDefault();
+      if (!seeker.value) {
+        trackPlayTime.value = this.currentTime as number;
+        duration.value = (trackPlayTime.value / track.value.duration) * 100
+        if (duration.value > 100) {
+          tracksStore.next();
+          player.value.play();
+        }
       }
-    }
-  })
-  player.value.volume = volume.value * 0.01
+    })
+    player.value.volume = volume.value * 0.01
+  };
+})
+onMounted(async () => {
 })
 </script>
 
