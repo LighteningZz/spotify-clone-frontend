@@ -8,11 +8,11 @@
               <v-avatar class="ma-3" rounded="0" size="125">
                 <v-img src="https://cdn.vuetifyjs.com/images/cards/halcyon.png"></v-img>
               </v-avatar>
-              <div>
+              <div v-if="track">
                 <v-card-title class="text-h5">
-                  Halcyon Days
+                  {{ track.title }}
                 </v-card-title>
-                <v-card-subtitle>Ellie Goulding</v-card-subtitle>
+                <v-card-subtitle>{{ track.artist.name }}</v-card-subtitle>
                 <v-card-actions>
                   <v-btn class="ms-2" icon="fas fa-play" variant="text"></v-btn>
                 </v-card-actions>
@@ -56,20 +56,7 @@
 </template>
 
 <script setup lang="ts">
-const track = {
-  "id": "ded27e39-50c5-48d6-9619-c31fcd7838a4",
-  "title": "Look No Further (ft Grace Luisa)",
-  "image": "https://ncsmusic.s3.eu-west-1.amazonaws.com/tracks/000/001/748/325x325/look-no-further-ft-grace-luisa-1725580853-htXRq9BJrb.jpg",
-  "duration": 161.0448979591837,
-  "durationText": "2.41",
-  "url": "https://ncsmusic.s3.eu-west-1.amazonaws.com/tracks/000/001/748/look-no-further-ft-grace-luisa-1725580855-UU82B1Ixlx.mp3",
-  "albumId": "b908d3f3-1d6f-4654-aa21-5e82f5273ecd",
-  "artistsId": "1769ae3e-f66c-4a01-bf3f-a9eab41cf4da",
-  "_count": {
-    "playListItems": 0
-  },
-  "Favorite": []
-}
+const track = ref<TracksResponseModel | any>(null)
 const trackPlayTime = ref(0);
 const duration = ref(0);
 const player = ref(new Audio);
@@ -81,7 +68,7 @@ const muted = ref(false)
 const seeker = ref(false);
 
 const seekHandler = () => {
-  const seekTo = (duration.value * track.duration) / 100;
+  const seekTo = (duration.value * track.value.duration) / 100;
   player.value.currentTime = seekTo;
 }
 const volumeIconHandler = computed(() => {
@@ -124,7 +111,11 @@ const volumeHandler = () => {
   }
 }
 
+import { TracksResponseModel, useTracksStore } from '../stores/tracks';
+const tracksStore = await useTracksStore();
 
+onMounted(async () => {
+})
 const playHandler = () => {
   play.value = !play.value
   if (play.value) {
@@ -144,20 +135,21 @@ const nextHandler = () => {
 
 }
 
-onMounted(() => {
-  player.value = new Audio(track.url);
+onMounted(async () => {
+  const data = await tracksStore.get()
+  tracksStore.setCurrentTrack(data[0])
+  track.value = data[0];
+  player.value = new Audio(track.value.url);
   player.value.addEventListener('timeupdate', function (e) {
     e.preventDefault();
-    setTimeout(() => {
-      if (!seeker.value) {
-        trackPlayTime.value = this.currentTime;
-        duration.value = (trackPlayTime.value / track.duration) * 100
-        if (duration.value > 100) {
-          player.value.src = 'https://ncsmusic.s3.eu-west-1.amazonaws.com/tracks/000/001/689/underrated-feat-sunny-lukas-1717498853-r0PbfV6FZf.mp3'
-          player.value.play();
-        }
+    if (!seeker.value) {
+      trackPlayTime.value = this.currentTime;
+      duration.value = (trackPlayTime.value / track.value.duration) * 100
+      if (duration.value > 100) {
+        player.value.src = 'https://ncsmusic.s3.eu-west-1.amazonaws.com/tracks/000/001/689/underrated-feat-sunny-lukas-1717498853-r0PbfV6FZf.mp3'
+        player.value.play();
       }
-    }, 1000)
+    }
   })
   player.value.volume = volume.value * 0.01
 })

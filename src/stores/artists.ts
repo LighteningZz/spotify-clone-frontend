@@ -7,12 +7,12 @@ export const useArtistsStore = defineStore('artists', {
     list: [] as ArtistResponseModel[]
   }),
   actions: {
-    get: async () => {
+    async get() {
       const res = await useAxios().get<ArtistResponseModel[]>('/api/artists');
       this.list = res.data;
       return this.list;
     },
-    getById: async (id: string) => {
+    async getById(id: string) {
       const res = await useAxios().get<ArtistResponseModel>('/api/artists/' + id);
       return res.data;
     },
@@ -20,8 +20,6 @@ export const useArtistsStore = defineStore('artists', {
   getters: {
 
   }
-
-
 
 })
 export interface ArtistResponseModel {
